@@ -1,2 +1,2 @@
 # chaos
-dcd tron application base library
+dcd tron application base library for golang
