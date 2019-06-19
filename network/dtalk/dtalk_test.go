@@ -1,4 +1,4 @@
-package devtools
+package dtalk
 
 import "testing"
 
