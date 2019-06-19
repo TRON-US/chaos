@@ -18,9 +18,9 @@ type MsgText struct {
 }
 
 type PayLoad struct {
-	Msg      string   `json:"内容"`
-	Priority Priority `json:"优先级"`
-	ServerId string   `json:"服务 ID"`
+	Msg       string   `json:"msg"`
+	Priority  Priority `json:"priority"`
+	ServiceId string   `json:"service_id"`
 }
 
 type Priority int
@@ -39,14 +39,24 @@ const (
 )
 
 var (
-	token = "9214b993e5692d6ba59a03d38b246febf2612c6563d1ec93ace1b0da35cfaae2"
+	url string
 )
 
+func init() {
+	token := "9214b993e5692d6ba59a03d38b246febf2612c6563d1ec93ace1b0da35cfaae2"
+	url = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s", token)
+}
+
 /*
-{"内容":"$msg","优先级":$lvl,"服务 ID":$serverId}
+	Trigger warning in Dtalk.
+	{
+		msg: $msg,
+		priority: $lvl,
+		server_id: $serviceId
+	}
 */
-func Alert(msg string, lvl Priority, serverId string) error {
-	pl := &PayLoad{Msg: msg, Priority: lvl, ServerId: serverId}
+func Warning(msg string, lvl Priority, serviceId string) error {
+	pl := &PayLoad{Msg: msg, Priority: lvl, ServiceId: serviceId}
 	bs, e := json.Marshal(pl)
 	if e != nil {
 		return e
@@ -54,8 +64,9 @@ func Alert(msg string, lvl Priority, serverId string) error {
 	return doSend(bs)
 }
 
-func SendText(msg string, serverId string) error {
-	m := fmt.Sprintf("%s. serverId: %s", msg, serverId)
+// Send message(plain text) to Dtalk Robot.
+func SendText(msg string, serviceId string) error {
+	m := fmt.Sprintf("%s. serverId: %s", msg, serviceId)
 	return doSend([]byte(m))
 }
 
@@ -66,11 +77,9 @@ func doSend(bs []byte) error {
 		return e
 	}
 	body := bytes.NewBuffer(bs)
-	url := fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s", token)
 	res, err := http.Post(url, "application/json;charset=utf-8", body)
-	result, err := ioutil.ReadAll(res.Body)
+	_, err = ioutil.ReadAll(res.Body)
 	res.Body.Close()
-	fmt.Println(string(result))
 	if err != nil {
 		return err
 	}
