@@ -12,12 +12,14 @@ import (
 )
 
 const (
-	TRX_MESSAGE_HEADER = "\x19TRON Signed Message:\n32"
-	AddressPrefixMain  = "41" //41 + address
+	TrxMessageHeader  = "\x19TRON Signed Message:\n32"
+	AddressPrefixMain = "41" //41 + address
 )
 
-// VerifySign 验证签名
-//	transaction: 交易对象
+// VerifySignature 验证签名
+//  sign: 对原始数据进行签名后的 signature
+//	rawData: 待签名的原始数据
+//  addr: Tron address, prefixed with "T"
 func VerifySignature(sign []byte, rawData string, addr string) bool {
 	if len(sign) != 65 { // sign check
 		return false
@@ -25,7 +27,7 @@ func VerifySignature(sign []byte, rawData string, addr string) bool {
 	if sign[64] >= 27 {
 		sign[64] = sign[64] - 27
 	}
-	rawData = TRX_MESSAGE_HEADER + rawData
+	rawData = TrxMessageHeader + rawData
 
 	pubKey, err := GetSignedPubKey(rawData, sign)
 	if err != nil {
@@ -43,9 +45,11 @@ func VerifySignature(sign []byte, rawData string, addr string) bool {
 }
 
 // GetSignedPublicKey 获取交易签名账户的公钥
+// rawData: 待签名的原始数据
+// sign: 对原始数据进行签名后的 signature
 func GetSignedPubKey(rawData string, sign []byte) ([]byte, error) {
 	if len(sign) != 65 { // sign check
-		return nil, errors.New("Invalid Transaction Signature, should be 65 length bytes")
+		return nil, errors.New("invalid transaction signature, should be 65 length bytes")
 	}
 	rawByte := []byte(rawData)
 	hash := ethcrypto.Keccak256(rawByte)
@@ -62,7 +66,11 @@ func GetTronBase58Address(in string) (out string, err error) {
 		return "", err
 	}
 
-	out = Base58EncodeAddr(HexDecode(hexAddr))
+	bytes, err := HexDecode(hexAddr)
+	if err != nil {
+		return "", nil
+	}
+	out = Base58EncodeAddr(bytes)
 
 	return
 }
@@ -76,7 +84,7 @@ func GetTronHexAddress(in string) (out string, err error) {
 		return "", err
 	}
 	if 1 > len(pubBytes) {
-		return "", fmt.Errorf("Invalid address")
+		return "", fmt.Errorf("invalid address")
 	}
 	rawPubKey := pubBytes[1:] // remove prefix byte
 
@@ -93,6 +101,7 @@ func GetTronHexAddress(in string) (out string, err error) {
 }
 
 // Base58EncodeAddr 将地址字节码编码为base58字符串
+//   in: input byte array to be converted into base58 string
 func Base58EncodeAddr(in []byte) string {
 	if len(in) < 2 {
 		return ""
@@ -101,9 +110,8 @@ func Base58EncodeAddr(in []byte) string {
 }
 
 // HexDecode ...
-func HexDecode(in string) []byte {
-	ret, _ := hex.DecodeString(in)
-	return ret
+func HexDecode(in string) ([]byte, error) {
+	return hex.DecodeString(in)
 }
 
 // HexEncode ...
