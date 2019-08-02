@@ -68,7 +68,7 @@ func GetTronBase58Address(in string) (out string, err error) {
 
 	bytes, err := HexDecode(hexAddr)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	out = Base58EncodeAddr(bytes)
 
