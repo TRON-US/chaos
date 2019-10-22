@@ -27,6 +27,8 @@ type SlackRequestBody struct {
 
 type Priority int
 
+// PRIORITY_0 is the most server / highest priority
+// PRIORITY_5 is the less server / lowest priority
 const (
 	PRIORITY_0 Priority = iota
 	PRIORITY_1
