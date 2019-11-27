@@ -1,4 +1,4 @@
-package utils
+package soter
 
 import (
 	"crypto/md5"
