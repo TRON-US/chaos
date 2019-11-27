@@ -21,21 +21,21 @@ type Attachment struct {
 	Fields []Field `json:"fields"`
 }
 
-type SlackRequestBody struct {
+type RequestBody struct {
 	Attachments []Attachment `json:"attachments"`
 }
 
 type Priority int
 
-// PRIORITY_0 is the most server / highest priority
-// PRIORITY_5 is the less server / lowest priority
+// Priority0 is the most server / highest priority
+// Priority5 is the less server / lowest priority
 const (
-	PRIORITY_0 Priority = iota
-	PRIORITY_1
-	PRIORITY_2
-	PRIORITY_3
-	PRIORITY_4
-	PRIORITY_5
+	Priority0 Priority = iota
+	Priority1
+	Priority2
+	Priority3
+	Priority4
+	Priority5
 )
 
 // @webhookUrl, the slack incoming webhookUrl to send the notification
@@ -43,7 +43,7 @@ const (
 // @retryTimeout, in seconds
 // @priority, the priority of the slack message
 // @priorityThreshold, the priority threshold determining whether to send this slack message based on the priority level
-func SendSlackNotification(webhookUrl string, slackRequest SlackRequestBody, retryTimeout int, priority Priority, priorityThreshold Priority) error {
+func SendSlackNotification(webhookUrl string, slackRequest RequestBody, retryTimeout int, priority Priority, priorityThreshold Priority) error {
 	if priority > priorityThreshold {
 		return nil
 	}
