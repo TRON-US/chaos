@@ -4,6 +4,7 @@ package dtalk
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -91,6 +92,8 @@ func doSend(url string, bs []byte) error {
 		return err
 	}
 
-	fmt.Println(responseBody)
+	if responseBody.Code != 0 {
+		return errors.New(responseBody.Msg)
+	}
 	return err
 }
