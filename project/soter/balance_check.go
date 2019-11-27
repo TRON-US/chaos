@@ -3,6 +3,8 @@ package soter
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/TRON-US/chaos/utils"
 )
 
 type BalanceCheck struct {
@@ -19,7 +21,7 @@ func (balanceCheck *BalanceCheck) GetBalanceCheck() (string, error) {
 		return "", err
 	}
 
-	return Md5(string(lockJsonString)), nil
+	return utils.Md5(string(lockJsonString)), nil
 }
 
 // Verify user balance illegal.

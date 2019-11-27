@@ -1,4 +1,4 @@
-package soter
+package utils
 
 import (
 	"testing"
