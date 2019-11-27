@@ -34,7 +34,7 @@ func Sign(data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
 
 // VerifySignature
 //  sign: signature obtained by signing rawData
-//	rawData: Raw data to be signed
+//  rawData: Raw data to be signed
 //  addr: Tron address, prefixed with "T"
 func VerifySignature(sign []byte, rawData string, addr string) bool {
 	if len(sign) != 65 { // sign check
