@@ -1,12 +1,14 @@
 package crypto
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
 
 	"github.com/btcsuite/btcutil/base58"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -16,9 +18,23 @@ const (
 	AddressPrefixMain = "41" //41 + address
 )
 
-// VerifySignature 验证签名
-//  sign: 对原始数据进行签名后的 signature
-//	rawData: 待签名的原始数据
+// Sign data by ecdsa private key.
+func Sign(data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
+	hash, err := Hash(data)
+	if err != nil {
+		return nil, err
+	}
+
+	signature, err := ethCrypto.Sign(hash, key)
+	if err != nil {
+		return nil, err
+	}
+	return signature, nil
+}
+
+// VerifySignature
+//  sign: signature obtained by signing rawData
+//	rawData: Raw data to be signed
 //  addr: Tron address, prefixed with "T"
 func VerifySignature(sign []byte, rawData string, addr string) bool {
 	if len(sign) != 65 { // sign check
@@ -33,6 +49,7 @@ func VerifySignature(sign []byte, rawData string, addr string) bool {
 	if err != nil {
 		return false
 	}
+
 	signAddr, err := GetTronBase58Address(HexEncode(pubKey))
 	if err != nil {
 		return false
@@ -44,20 +61,20 @@ func VerifySignature(sign []byte, rawData string, addr string) bool {
 	return true
 }
 
-// GetSignedPublicKey 获取交易签名账户的公钥
-// rawData: 待签名的原始数据
-// sign: 对原始数据进行签名后的 signature
+// GetSignedPublicKey get the public key of the transaction signing account
+//  rawData: Raw data to be signed
+//  sign: signature obtained by signing rawData
 func GetSignedPubKey(rawData string, sign []byte) ([]byte, error) {
 	if len(sign) != 65 { // sign check
 		return nil, errors.New("invalid transaction signature, should be 65 length bytes")
 	}
 	rawByte := []byte(rawData)
-	hash := ethcrypto.Keccak256(rawByte)
+	hash := ethCrypto.Keccak256(rawByte)
 
-	return ethcrypto.Ecrecover(hash[:], sign)
+	return ethCrypto.Ecrecover(hash[:], sign)
 }
 
-// GetTronBase58Address 根据 hex encoding public key生成 hex encoding address
+// GetTronBase58Address Generate hex encoding address according to hex encoding public key
 //	in: hex encoding public key (uncompressed public key)
 //	out: base58 encoding address
 func GetTronBase58Address(in string) (out string, err error) {
@@ -71,11 +88,10 @@ func GetTronBase58Address(in string) (out string, err error) {
 		return "", err
 	}
 	out = Base58EncodeAddr(bytes)
-
 	return
 }
 
-// GetTronHexAddress 根据 hex encoding public key生成 hex encoding address
+// GetTronHexAddress Generate hex encoding address according to hex encoding public key
 //	in: hex encoding public key (uncompressed public key)
 //	out: hex encoding address
 func GetTronHexAddress(in string) (out string, err error) {
@@ -100,13 +116,38 @@ func GetTronHexAddress(in string) (out string, err error) {
 	return
 }
 
-// Base58EncodeAddr 将地址字节码编码为base58字符串
-//   in: input byte array to be converted into base58 string
+// Base58EncodeAddr Encode byte address to base58 string
+//  in: byte array address
+//  out: Base58 string address
 func Base58EncodeAddr(in []byte) string {
 	if len(in) < 2 {
 		return ""
 	}
 	return base58.CheckEncode(in[1:], in[0]) // first byte is version, reset is data
+}
+
+// Base58DecodeAddr Decode base58 string to byte address
+//  in: Base58 string address
+//  out: byte array address
+func Base58DecodeAddr(in string) ([]byte, error) {
+	decodeCheck := base58.Decode(in)
+	if len(decodeCheck) <= 4 {
+		return nil, errors.New("base58 decode length error")
+	}
+	decodeData := decodeCheck[:len(decodeCheck)-4]
+	hash0, err := Hash(decodeData)
+	if err != nil {
+		return nil, err
+	}
+	hash1, err := Hash(hash0)
+	if hash1 == nil {
+		return nil, err
+	}
+	if hash1[0] == decodeCheck[len(decodeData)] && hash1[1] == decodeCheck[len(decodeData)+1] &&
+		hash1[2] == decodeCheck[len(decodeData)+2] && hash1[3] == decodeCheck[len(decodeData)+3] {
+		return decodeData, nil
+	}
+	return nil, errors.New("base58 check failed")
 }
 
 // HexDecode ...
@@ -117,4 +158,15 @@ func HexDecode(in string) ([]byte, error) {
 // HexEncode ...
 func HexEncode(in []byte) string {
 	return hex.EncodeToString(in)
+}
+
+// Package goLang sha256 hash algorithm.
+func Hash(s []byte) ([]byte, error) {
+	h := sha256.New()
+	_, err := h.Write(s)
+	if err != nil {
+		return nil, err
+	}
+	bs := h.Sum(nil)
+	return bs, nil
 }
