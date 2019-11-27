@@ -9,34 +9,20 @@ import (
 	"net/http"
 )
 
-// Trigger warning in Dtalk.
-func Warning(msg string, priority Priority, serviceId string) error {
-	pl := &PayLoad{Msg: msg, Priority: priority, ServiceId: serviceId}
-	bs, e := json.Marshal(pl)
-	if e != nil {
-		return e
-	}
-	return doSend(bs)
-}
-
-// Send message(plain text) to Dtalk Robot.
-func SendText(msg string, serviceId string) error {
-	m := fmt.Sprintf("%s. serverId: %s", msg, serviceId)
-	return doSend([]byte(m))
-}
+type Priority int
 
 const (
 	// priority 0-9
-	PRIORITY_0 Priority = iota
-	PRIORITY_1
-	PRIORITY_2
-	PRIORITY_3
-	PRIORITY_4
-	PRIORITY_5
-	PRIORITY_6
-	PRIORITY_7
-	PRIORITY_8
-	PRIORITY_9
+	Priority0 Priority = iota
+	Priority1
+	Priority2
+	Priority3
+	Priority4
+	Priority5
+	Priority6
+	Priority7
+	Priority8
+	Priority9
 )
 
 type MsgInfo struct {
@@ -54,29 +40,57 @@ type PayLoad struct {
 	ServiceId string   `json:"service_id"`
 }
 
-type Priority int
-
-var url string
-
-func init() {
-	token := "9214b993e5692d6ba59a03d38b246febf2612c6563d1ec93ace1b0da35cfaae2"
-	url = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s", token)
+type ResponseBody struct {
+	Code int    `json:"errcode"`
+	Msg  string `json:"errmsg"`
 }
 
-func doSend(bs []byte) error {
-	mi := &MsgInfo{MsgType: "text", Text: MsgText{Content: string(bs)}}
-	bs, e := json.Marshal(mi)
+// Trigger warning in Dtalk.
+func Warning(url, msg string, priority Priority, serviceId string) error {
+	pl := &PayLoad{Msg: msg, Priority: priority, ServiceId: serviceId}
+	bs, e := json.Marshal(pl)
 	if e != nil {
 		return e
 	}
-	body := bytes.NewBuffer(bs)
-	res, err := http.Post(url, "application/json;charset=utf-8", body)
-	_, err = ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	return doSend(url, bs)
+}
+
+// Send message(plain text) to Dtalk Robot.
+func SendText(url, msg string, serviceId string) error {
+	m := fmt.Sprintf("%s. serverId: %s", msg, serviceId)
+	return doSend(url, []byte(m))
+}
+
+// Http post to dtalk.
+func doSend(url string, bs []byte) error {
+	// Init message information.
+	mi := &MsgInfo{MsgType: "text", Text: MsgText{Content: string(bs)}}
+
+	// Convert byte to json
+	bs, err := json.Marshal(mi)
 	if err != nil {
 		return err
 	}
-	_, err = ioutil.ReadAll(res.Body)
-	res.Body.Close()
+
+	res, err := http.Post(url, "application/json;charset=utf-8", bytes.NewBuffer(bs))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = res.Body.Close()
+	}()
+
+	resBodyByte, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	responseBody := &ResponseBody{}
+	err = json.Unmarshal(resBodyByte, responseBody)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(responseBody)
 	return err
 }
