@@ -5,16 +5,16 @@ import (
 	"strings"
 )
 
-type Lock struct {
+type BalanceCheck struct {
 	Address       string `json:"address"`
 	Balance       int    `json:"balance"`
 	FreezeBalance int    `json:"freeze_balance"`
-	UpdateTime    int    `json:"update_time"`
+	Timestamp     int    `json:"timestamp"`
 }
 
-// Get balance lock by Lock struct.
-func (lock *Lock) GetBalanceLock() (string, error) {
-	lockJsonString, err := json.Marshal(lock)
+// Get balance check by Lock struct.
+func (balanceCheck *BalanceCheck) GetBalanceCheck() (string, error) {
+	lockJsonString, err := json.Marshal(balanceCheck)
 	if err != nil {
 		return "", err
 	}
@@ -23,8 +23,8 @@ func (lock *Lock) GetBalanceLock() (string, error) {
 }
 
 // Verify user balance illegal.
-func (lock *Lock) CheckBalanceLock(balanceLock string) bool {
-	currentBalanceLock, err := lock.GetBalanceLock()
+func (balanceCheck *BalanceCheck) VerifyBalanceCheck(balanceLock string) bool {
+	currentBalanceLock, err := balanceCheck.GetBalanceCheck()
 	if err != nil {
 		return false
 	}
