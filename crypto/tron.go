@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -15,35 +14,53 @@ import (
 
 const (
 	TrxMessageHeader  = "\x19TRON Signed Message:\n32"
-	AddressPrefixMain = "41" //41 + address
+	AddressPrefixMain = "41"
 )
 
-// Sign data by ecdsa private key.
-func Sign(data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
-	hash, err := Hash(data)
-	if err != nil {
+// TronlinkSignature
+//  signType: if add TrxMessageHeader to data
+//  data: data to be signed
+//  hexPrivateKey: sign private key
+func Signature(signType bool, data string, hexPrivateKey string) ([]byte, error) {
+	if len(data) == 0 {
+		return nil, errors.New("invalid raw data")
+	}
+
+	if signType {
+		data = TrxMessageHeader + data
+	}
+
+	hash0 := ethCrypto.Keccak256([]byte(data))
+
+	privateKey, err := ethCrypto.HexToECDSA(hexPrivateKey)
+	if nil != err || nil == privateKey {
 		return nil, err
 	}
 
-	signature, err := ethCrypto.Sign(hash, key)
-	if err != nil {
-		return nil, err
+	signData, err := ethCrypto.Sign(hash0[:], privateKey)
+	if err == nil && len(signData) == 65 && signData[64] < 27 {
+		signData[64] = signData[64] + 27
 	}
-	return signature, nil
+	return signData, err
 }
 
-// VerifySignature
+// VerifyTronlinkSignature
+//  signType: if add TrxMessageHeader to data
 //  sign: signature obtained by signing rawData
 //  rawData: Raw data to be signed
 //  addr: Tron address, prefixed with "T"
-func VerifySignature(sign []byte, rawData string, addr string) bool {
+func VerifySignature(signType bool, sign []byte, rawData string, addr string) bool {
 	if len(sign) != 65 { // sign check
 		return false
 	}
+
 	if sign[64] >= 27 {
 		sign[64] = sign[64] - 27
 	}
-	rawData = TrxMessageHeader + rawData
+
+	if signType {
+		rawData = TrxMessageHeader + rawData
+	}
 
 	pubKey, err := GetSignedPubKey(rawData, sign)
 	if err != nil {
@@ -112,7 +129,6 @@ func GetTronHexAddress(in string) (out string, err error) {
 	addrPrefix := AddressPrefixMain
 
 	out = fmt.Sprintf("%s%s", addrPrefix, hashRetStr[24:]) // address prefix + hash remove first 24 length
-
 	return
 }
 
