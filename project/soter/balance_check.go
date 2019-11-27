@@ -9,8 +9,8 @@ import (
 
 type BalanceCheck struct {
 	Address       string `json:"address"`
-	Balance       int    `json:"balance"`
-	FreezeBalance int    `json:"freeze_balance"`
+	Balance       int64  `json:"balance"`
+	FreezeBalance int64  `json:"freeze_balance"`
 	Timestamp     int    `json:"timestamp"`
 }
 
