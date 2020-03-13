@@ -2,13 +2,13 @@ package balancer
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"strconv"
 	"sync"
 
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -26,7 +26,7 @@ func InitRoundRobin() {
 type roundRobinPickerBuilder struct{}
 
 func (*roundRobinPickerBuilder) Build(readySCs map[resolver.Address]balancer.SubConn) balancer.Picker {
-	grpclog.Infof("roundrobinPicker: newPicker called with readySCs: %v", readySCs)
+	log.Printf("roundrobinPicker: newPicker called with readySCs: %v\n", readySCs)
 
 	if len(readySCs) == 0 {
 		return base.NewErrPicker(balancer.ErrNoSubConnAvailable)

@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
-	"google.golang.org/grpc/grpclog"
 )
 
 var RegistryDir = "/soter"
@@ -118,7 +118,7 @@ func (r *Registrar) keepalive(ctx context.Context) {
 			if r.conn.State() != zk.StateHasSession {
 				err := r.register(r.path, r.nodeInfo)
 				if err != nil {
-					grpclog.Errorf("Registrar register error, %v\n", err.Error())
+					log.Printf("Registrar register error, %v\n", err.Error())
 				}
 			}
 		}
